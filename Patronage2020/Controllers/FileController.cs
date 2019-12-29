@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +15,10 @@ namespace Patronage2020.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        private static string _errMsg = "Content cannot be larger than 50 characters.";
-        private static string _fileDir = "Data/";
-        private static string _fileName = "PatronageFile";
-        private static string _filePath = _fileDir + _fileName;
+        private const string FILE_DIR = "Data/";
+        private const string FILE_NAME = "PatronageFile";
 
+        private readonly string _filePath = FILE_DIR + FILE_NAME;
         private readonly ILogger<FileController> _logger;
 
         public FileController(ILogger<FileController> logger)
@@ -28,52 +29,51 @@ namespace Patronage2020.Controllers
         [HttpGet]
         public string Get()
         {
-            var content = "";
+            var builder = new StringBuilder();
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(_fileDir))
+            if (!Directory.Exists(FILE_DIR))
             {
-                Directory.CreateDirectory(_fileDir);
+                Directory.CreateDirectory(FILE_DIR);
             }
 
             // Concatenate all files into single string
-            var di = new DirectoryInfo(_fileDir);
-            foreach (FileInfo fi in di.GetFiles())
-            {                        
-                using StreamReader file = new StreamReader(fi.FullName);
-                content += file.ReadToEnd();
+            var dirInfo = new DirectoryInfo(FILE_DIR);
+            foreach (var fileInfo in dirInfo.GetFiles())
+            {
+                using (var file = new StreamReader(fileInfo.FullName))
+                {
+                    builder.Append(file.ReadToEnd());
+                }
             }
 
-            return content;
+            return builder.ToString();
         }
 
         [HttpPost]
         public string Post([FromBody] string content)
         {
-            // If content is not valid, return an error
-            if (!IsContentValid(content))
-            {
-                _logger.LogError(_errMsg);
-                return _errMsg;
-            }
+            // If content is invalid, throw an error
+            ValidateContent(content);
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(_fileDir))
+            if (!Directory.Exists(FILE_DIR))
             {
-                Directory.CreateDirectory(_fileDir);
+                Directory.CreateDirectory(FILE_DIR);
             }
 
             // Delete all existing data
-            var di = new DirectoryInfo(_fileDir);            
-            foreach (FileInfo fi in di.GetFiles())
+            var dirInfo = new DirectoryInfo(FILE_DIR);            
+            foreach (var file in dirInfo.GetFiles())
             {
-                fi.Delete();
+                file.Delete();
             }
 
             // Create new file and insert content
-            using StreamWriter file = new StreamWriter(_filePath + 1);
-            file.Write(content);
-            file.Close();
+            using (var file = new StreamWriter(_filePath + 1))
+            {
+                file.Write(content);
+            }
 
             return "Content was replaced successfully.";
         }
@@ -81,17 +81,13 @@ namespace Patronage2020.Controllers
         [HttpPut]
         public string Put([FromBody] string content)
         {
-            // If content is not valid, return an error
-            if (!IsContentValid(content))
-            {
-                _logger.LogError(_errMsg);
-                return _errMsg;
-            }
+            // If content is invalid, throw an error
+            ValidateContent(content);
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(_fileDir))
+            if (!Directory.Exists(FILE_DIR))
             {
-                Directory.CreateDirectory(_fileDir);
+                Directory.CreateDirectory(FILE_DIR);
             }
 
             // Start content with new line
@@ -108,8 +104,8 @@ namespace Patronage2020.Controllers
                 try
                 {
                     // Check if file is not larger than 256 bytes
-                    FileInfo fi = new FileInfo(_filePath + fileNumber);
-                    var fileSize = (int)fi.Length;
+                    var fileInfo = new FileInfo(_filePath + fileNumber);
+                    var fileSize = (int)fileInfo.Length;
 
                     // If the file is too large, move to the next one
                     if (fileSize >= 256)
@@ -133,9 +129,11 @@ namespace Patronage2020.Controllers
                             var firstPart = content.Substring(0, length);
 
                             // Put in the part of the content that still fits in
-                            using StreamWriter f = new StreamWriter(_filePath + fileNumber, true);
-                            f.Write(firstPart);
-                            f.Close();
+                            using (var f = new StreamWriter(_filePath + fileNumber, true))
+                            {
+                                f.Write(firstPart);
+                            }
+
                             fileNumber++;
 
                             // Save the characters we haven't put in yet
@@ -144,28 +142,33 @@ namespace Patronage2020.Controllers
 
                         // Save the WHOLE content inside EXISTING file 
                         // or the REST of the content inside a NEW file
-                        using StreamWriter file = new StreamWriter(_filePath + fileNumber, true);
-                        file.Write(content);
-                        file.Close();
+                        using (var outputFile = new StreamWriter(_filePath + fileNumber, true))
+                        {
+                            outputFile.Write(content);
+                        }
+
                         lineWasInserted = true;
                     }
                 }
                 catch (FileNotFoundException e)
                 {
                     // File was not found, so create new file and add content to it
-                    using StreamWriter file = new StreamWriter(_filePath + fileNumber, true);
-                    file.Write(content);
-                    file.Close();
+                    using (var file = new StreamWriter(_filePath + fileNumber, true))
+                    {
+                        file.Write(content);
+                    }
+
                     lineWasInserted = true;
                 }
             }
 
-            return "Content was insterted successfully";
+            return "Content was insterted successfully.";
         }
 
-        private static bool IsContentValid(string content)
+        private static void ValidateContent(string content)
         {
-            return (content.Length <= 50);
+            if (content.Length <= 50)
+                throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
         }
     }
 }
