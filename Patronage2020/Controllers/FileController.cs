@@ -15,12 +15,12 @@ namespace Patronage2020.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        private const string FILE_DIR = "Data/";
-        private const string FILE_NAME = "PatronageFile";
-        private const int FILE_MAX_SIZE = 256;
-        private const int LINE_MAX_LENGTH = 50;
+        private const string FileDir = "Data/";
+        private const string FileName = "PatronageFile";
+        private const int FileMaxSize = 256;
+        private const int LineMaxLength = 50;
 
-        private readonly string _filePath = FILE_DIR + FILE_NAME;
+        private readonly string _filePath = FileDir + FileName;
         private readonly ILogger<FileController> _logger;
 
         public FileController(ILogger<FileController> logger)
@@ -34,13 +34,13 @@ namespace Patronage2020.Controllers
             var builder = new StringBuilder();
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(FILE_DIR))
+            if (!Directory.Exists(FileDir))
             {
-                Directory.CreateDirectory(FILE_DIR);
+                Directory.CreateDirectory(FileDir);
             }
 
             // Concatenate all files into single string
-            var dirInfo = new DirectoryInfo(FILE_DIR);
+            var dirInfo = new DirectoryInfo(FileDir);
             foreach (var fileInfo in dirInfo.GetFiles())
             {
                 using (var file = new StreamReader(fileInfo.FullName))
@@ -59,13 +59,13 @@ namespace Patronage2020.Controllers
             ValidateContent(content);
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(FILE_DIR))
+            if (!Directory.Exists(FileDir))
             {
-                Directory.CreateDirectory(FILE_DIR);
+                Directory.CreateDirectory(FileDir);
             }
 
             // Delete all existing data
-            var dirInfo = new DirectoryInfo(FILE_DIR);            
+            var dirInfo = new DirectoryInfo(FileDir);            
             foreach (var file in dirInfo.GetFiles())
             {
                 file.Delete();
@@ -87,9 +87,9 @@ namespace Patronage2020.Controllers
             ValidateContent(content);
 
             // If file directory doesn't exist, create one
-            if (!Directory.Exists(FILE_DIR))
+            if (!Directory.Exists(FileDir))
             {
-                Directory.CreateDirectory(FILE_DIR);
+                Directory.CreateDirectory(FileDir);
             }
 
             // Start content with new line
@@ -110,7 +110,7 @@ namespace Patronage2020.Controllers
                     var fileSize = (int)fileInfo.Length;
 
                     // If the file is too large, move to the next one
-                    if (fileSize >= FILE_MAX_SIZE)
+                    if (fileSize >= FileMaxSize)
                     {
                         fileNumber++;
                         continue;
@@ -121,10 +121,10 @@ namespace Patronage2020.Controllers
                         var inputLength = content.Length + fileSize;
 
                         // If it's too large, we take as many characters as we can and put the rest in the next one
-                        if (inputLength > FILE_MAX_SIZE)
+                        if (inputLength > FileMaxSize)
                         {
                             // Measure how many characters will fit in
-                            var length = inputLength % FILE_MAX_SIZE;
+                            var length = inputLength % FileMaxSize;
                             length = content.Length - length;
 
                             // Get the part that still fits in
@@ -169,7 +169,7 @@ namespace Patronage2020.Controllers
 
         private static void ValidateContent(string content)
         {
-            if (content.Length > LINE_MAX_LENGTH)
+            if (content.Length > LineMaxLength)
                 throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
         }
     }
