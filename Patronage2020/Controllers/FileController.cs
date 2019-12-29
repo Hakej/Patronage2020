@@ -53,7 +53,7 @@ namespace Patronage2020.Controllers
         }
 
         [HttpPost]
-        public string Post([FromBody] string content)
+        public bool Post([FromBody] string content)
         {
             // If content is invalid, throw an error
             ValidateContent(content);
@@ -77,11 +77,11 @@ namespace Patronage2020.Controllers
                 file.Write(content);
             }
 
-            return "Content was replaced successfully.";
+            return true;
         }
 
         [HttpPut]
-        public string Put([FromBody] string content)
+        public bool Put([FromBody] string content)
         {
             // If content is invalid, throw an error
             ValidateContent(content);
@@ -164,7 +164,7 @@ namespace Patronage2020.Controllers
                 }
             }
 
-            return "Content was insterted successfully.";
+            return true;
         }
 
         private static void ValidateContent(string content)
