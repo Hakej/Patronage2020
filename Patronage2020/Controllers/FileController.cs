@@ -170,7 +170,9 @@ namespace Patronage2020.Controllers
         private static void ValidateContent(string content)
         {
             if (content.Length > LineMaxLength)
+            {
                 throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
+            }
         }
     }
 }
