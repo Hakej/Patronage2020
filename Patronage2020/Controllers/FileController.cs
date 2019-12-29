@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -21,12 +17,6 @@ namespace Patronage2020.Controllers
         private const int LineMaxLength = 50;
 
         private readonly string _filePath = FileDir + FileName;
-        private readonly ILogger<FileController> _logger;
-
-        public FileController(ILogger<FileController> logger)
-        {
-            _logger = logger;
-        }
 
         [HttpGet]
         public string Get()
@@ -103,66 +93,65 @@ namespace Patronage2020.Controllers
 
             while (!lineWasInserted)
             {
-                try
+                // If file doesn't exist, create a new file and add content to it
+                if (!System.IO.File.Exists(_filePath + fileNumber))
                 {
-                    // Check if file is not larger than FILE_MAX_SIZE bytes
-                    var fileInfo = new FileInfo(_filePath + fileNumber);
-                    var fileSize = (int)fileInfo.Length;
-
-                    // If the file is too large, move to the next one
-                    if (fileSize >= FileMaxSize)
-                    {
-                        fileNumber++;
-                        continue;
-                    }
-                    else
-                    {
-                        // Check the size of the input
-                        var inputLength = content.Length + fileSize;
-
-                        // If it's too large, we take as many characters as we can and put the rest in the next one
-                        if (inputLength > FileMaxSize)
-                        {
-                            // Measure how many characters will fit in
-                            var length = inputLength % FileMaxSize;
-                            length = content.Length - length;
-
-                            // Get the part that still fits in
-                            var firstPart = content.Substring(0, length);
-
-                            // Put in the part of the content that still fits in
-                            using (var f = new StreamWriter(_filePath + fileNumber, true))
-                            {
-                                f.Write(firstPart);
-                            }
-
-                            fileNumber++;
-
-                            // Save the characters we haven't put in yet
-                            content = content.Substring(length);
-                        }
-
-                        // Save the WHOLE content inside EXISTING file 
-                        // or the REST of the content inside a NEW file
-                        using (var outputFile = new StreamWriter(_filePath + fileNumber, true))
-                        {
-                            outputFile.Write(content);
-                        }
-
-                        lineWasInserted = true;
-                    }
-                }
-                catch (FileNotFoundException e)
-                {
-                    // File was not found, so create new file and add content to it
                     using (var file = new StreamWriter(_filePath + fileNumber, true))
                     {
                         file.Write(content);
                     }
 
                     lineWasInserted = true;
+                    break;
+                }                
+
+                // Check if file is not larger than FILE_MAX_SIZE bytes
+                var fileInfo = new FileInfo(_filePath + fileNumber);
+                var fileSize = (int)fileInfo.Length;
+
+                // If the file is too large, move to the next one
+                if (fileSize >= FileMaxSize)
+                {
+                    fileNumber++;
+                    continue;
                 }
-            }
+                else
+                {
+                    // Check the total size
+                    var totalLength = content.Length + fileSize;
+
+                    // If it's too large, we take as many characters as we can and put the rest in the next file
+                    if (totalLength > FileMaxSize)
+                    {
+                        // Measure how many characters will fit in
+                        var length = totalLength % FileMaxSize;
+                        length = content.Length - length;
+
+                        // Get the part that still fits in
+                        var firstPart = content.Substring(0, length);
+
+                        // Put it in the first file
+                        using (var f = new StreamWriter(_filePath + fileNumber, true))
+                        {
+                            f.Write(firstPart);
+                        }
+
+                        fileNumber++;
+
+                        // Save the characters we haven't put in yet
+                        content = content.Substring(length);
+                    }
+
+                    // Save the WHOLE content inside EXISTING file 
+                    // or the REST of the content inside a NEW file
+                    using (var outputFile = new StreamWriter(_filePath + fileNumber, true))
+                    {
+                        outputFile.Write(content);
+                    }
+
+                    lineWasInserted = true;
+                }
+            }            
 
             return true;
         }
