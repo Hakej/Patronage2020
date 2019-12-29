@@ -17,6 +17,8 @@ namespace Patronage2020.Controllers
     {
         private const string FILE_DIR = "Data/";
         private const string FILE_NAME = "PatronageFile";
+        private const int FILE_MAX_SIZE = 256;
+        private const int LINE_MAX_LENGTH = 50;
 
         private readonly string _filePath = FILE_DIR + FILE_NAME;
         private readonly ILogger<FileController> _logger;
@@ -103,12 +105,12 @@ namespace Patronage2020.Controllers
             {
                 try
                 {
-                    // Check if file is not larger than 256 bytes
+                    // Check if file is not larger than FILE_MAX_SIZE bytes
                     var fileInfo = new FileInfo(_filePath + fileNumber);
                     var fileSize = (int)fileInfo.Length;
 
                     // If the file is too large, move to the next one
-                    if (fileSize >= 256)
+                    if (fileSize >= FILE_MAX_SIZE)
                     {
                         fileNumber++;
                         continue;
@@ -119,10 +121,10 @@ namespace Patronage2020.Controllers
                         var inputLength = content.Length + fileSize;
 
                         // If it's too large, we take as many characters as we can and put the rest in the next one
-                        if (inputLength > 256)
+                        if (inputLength > FILE_MAX_SIZE)
                         {
                             // Measure how many characters will fit in
-                            var length = inputLength % 256;
+                            var length = inputLength % FILE_MAX_SIZE;
                             length = content.Length - length;
 
                             // Get the part that still fits in
@@ -167,7 +169,7 @@ namespace Patronage2020.Controllers
 
         private static void ValidateContent(string content)
         {
-            if (content.Length > 50)
+            if (content.Length > LINE_MAX_LENGTH)
                 throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
         }
     }
