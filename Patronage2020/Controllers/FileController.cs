@@ -11,19 +11,18 @@ namespace Patronage2020.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        private const string FileDir = "Data/";
+        private const string FileDir = "Data";
         private const string FileName = "PatronageFile";
         private const int FileMaxSize = 256;
         private const int LineMaxLength = 50;
 
-        private readonly string _filePath = FileDir + FileName;
+        private readonly string _filePath = Path.Combine(FileDir, FileName);
 
         [HttpGet]
         public string Get()
         {
             var builder = new StringBuilder();
 
-            // If file directory doesn't exist, create one
             if (!Directory.Exists(FileDir))
             {
                 Directory.CreateDirectory(FileDir);
@@ -45,10 +44,8 @@ namespace Patronage2020.Controllers
         [HttpPost]
         public bool Post([FromBody] string content)
         {
-            // If content is invalid, throw an error
             ValidateContent(content);
 
-            // If file directory doesn't exist, create one
             if (!Directory.Exists(FileDir))
             {
                 Directory.CreateDirectory(FileDir);
@@ -61,7 +58,6 @@ namespace Patronage2020.Controllers
                 file.Delete();
             }
 
-            // Create new file and insert content
             using (var file = new StreamWriter(_filePath + 1))
             {
                 file.Write(content);
@@ -73,27 +69,19 @@ namespace Patronage2020.Controllers
         [HttpPut]
         public bool Put([FromBody] string content)
         {
-            // If content is invalid, throw an error
             ValidateContent(content);
 
-            // If file directory doesn't exist, create one
             if (!Directory.Exists(FileDir))
             {
                 Directory.CreateDirectory(FileDir);
             }
 
-            // Start content with new line
             content = Environment.NewLine + content;
-
-            // Number identifying file
             var fileNumber = 1;
-
-            // Flag if the line was inserted
             var lineWasInserted = false;
 
             while (!lineWasInserted)
             {
-                // If file doesn't exist, create a new file and add content to it
                 if (!System.IO.File.Exists(_filePath + fileNumber))
                 {
                     using (var file = new StreamWriter(_filePath + fileNumber, true))
@@ -105,11 +93,9 @@ namespace Patronage2020.Controllers
                     break;
                 }                
 
-                // Check if file is not larger than FILE_MAX_SIZE bytes
                 var fileInfo = new FileInfo(_filePath + fileNumber);
                 var fileSize = (int)fileInfo.Length;
 
-                // If the file is too large, move to the next one
                 if (fileSize >= FileMaxSize)
                 {
                     fileNumber++;
@@ -117,7 +103,6 @@ namespace Patronage2020.Controllers
                 }
                 else
                 {
-                    // Check the total size
                     var totalLength = content.Length + fileSize;
 
                     // If it's too large, we take as many characters as we can and put the rest in the next file
@@ -142,8 +127,6 @@ namespace Patronage2020.Controllers
                         content = content.Substring(length);
                     }
 
-                    // Save the WHOLE content inside EXISTING file 
-                    // or the REST of the content inside a NEW file
                     using (var outputFile = new StreamWriter(_filePath + fileNumber, true))
                     {
                         outputFile.Write(content);
