@@ -175,7 +175,7 @@ namespace Patronage2020.Controllers
         }
 
         /// <summary>
-        /// Validates data if it's valid to save in the files
+        /// Checks if data is valid to save in the files
         /// </summary>
         /// <param name="content">Data to validate</param>
         /// <exception cref="System.Web.Http.HttpResponseException">Thrown when data is invalid</exception>
