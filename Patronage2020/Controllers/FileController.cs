@@ -4,36 +4,52 @@ using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Patronage2020.Controllers
 {
+    /// <summary>  
+    ///  The main controller class.
+    ///  It's responsible for responding to requests, such as reading and modifying files content
+    /// </summary>  
     [Route("api/[controller]")]
     [ApiController]
     public class FileController : ControllerBase
     {
-        private const string FileDir = "Data";
-        private const string FileName = "PatronageFile";
-        private const int FileMaxSize = 256;
-        private const int LineMaxLength = 50;
 
-        private readonly string _filePath = Path.Combine(FileDir, FileName);
+        private readonly IOptions<FileConfig> config;
 
+        /// <summary>
+        /// Initializes a new instance of the FileController class
+        /// </summary>
+        /// <param name="config">Project's configuration file</param>
+        public FileController(IOptions<FileConfig> config)
+        {
+            this.config = config;
+        }
+
+        /// <summary>
+        /// Handles a GET request - responds with data from files
+        /// </summary>
+        /// <returns>Content of all data files</returns>
         [HttpGet]
         public string Get()
         {
-            var builder = new StringBuilder();
+            var fileDir = config.Value.FileDir;
 
-            if (!Directory.Exists(FileDir))
+            if (!Directory.Exists(fileDir))
             {
-                Directory.CreateDirectory(FileDir);
+                Directory.CreateDirectory(fileDir);
             }
 
-            // Concatenate all files into single string
-            var dirInfo = new DirectoryInfo(FileDir);
+            var builder = new StringBuilder();
+            var dirInfo = new DirectoryInfo(fileDir);
+
             foreach (var fileInfo in dirInfo.GetFiles())
             {
                 using (var file = new StreamReader(fileInfo.FullName))
                 {
+                    // Concatenate all files into single string
                     builder.Append(file.ReadToEnd());
                 }
             }
@@ -41,24 +57,33 @@ namespace Patronage2020.Controllers
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Handles a POST request - overwrites all data
+        /// </summary>
+        /// <param name="content">Data we want to overwrite with</param>
+        /// <returns>True if everything went correctly</returns>
+        /// <exception cref="System.Web.Http.HttpResponseException">Thrown when data doesn't pass the validation</exception>
         [HttpPost]
         public bool Post([FromBody] string content)
         {
             ValidateContent(content);
 
-            if (!Directory.Exists(FileDir))
+            var fileDir = config.Value.FileDir;
+            var filePath = Path.Combine(config.Value.FileDir, config.Value.FileName);
+
+            if (!Directory.Exists(fileDir))
             {
-                Directory.CreateDirectory(FileDir);
+                Directory.CreateDirectory(fileDir);
             }
 
             // Delete all existing data
-            var dirInfo = new DirectoryInfo(FileDir);            
+            var dirInfo = new DirectoryInfo(fileDir);            
             foreach (var file in dirInfo.GetFiles())
             {
                 file.Delete();
             }
 
-            using (var file = new StreamWriter(_filePath + 1))
+            using (var file = new StreamWriter(filePath + 1))
             {
                 file.Write(content);
             }
@@ -66,14 +91,23 @@ namespace Patronage2020.Controllers
             return true;
         }
 
+        /// <summary>
+        /// Handles a POST request - puts data in the end of the file as a new line
+        /// </summary>
+        /// <param name="content">Data we want to put</param>
+        /// <returns>True if everything went correctly</returns>
+        /// <exception cref="System.Web.Http.HttpResponseException">Thrown when data doesn't pass the validation</exception>
         [HttpPut]
         public bool Put([FromBody] string content)
         {
             ValidateContent(content);
 
-            if (!Directory.Exists(FileDir))
+            var fileDir = config.Value.FileDir;
+            var filePath = Path.Combine(config.Value.FileDir, config.Value.FileName);
+
+            if (!Directory.Exists(fileDir))
             {
-                Directory.CreateDirectory(FileDir);
+                Directory.CreateDirectory(fileDir);
             }
 
             content = Environment.NewLine + content;
@@ -82,9 +116,9 @@ namespace Patronage2020.Controllers
 
             while (!lineWasInserted)
             {
-                if (!System.IO.File.Exists(_filePath + fileNumber))
+                if (!System.IO.File.Exists(filePath + fileNumber))
                 {
-                    using (var file = new StreamWriter(_filePath + fileNumber, true))
+                    using (var file = new StreamWriter(filePath + fileNumber, true))
                     {
                         file.Write(content);
                     }
@@ -93,10 +127,11 @@ namespace Patronage2020.Controllers
                     break;
                 }                
 
-                var fileInfo = new FileInfo(_filePath + fileNumber);
+                var fileInfo = new FileInfo(filePath + fileNumber);
                 var fileSize = (int)fileInfo.Length;
+                var fileMaxSize = config.Value.FileMaxSize;
 
-                if (fileSize >= FileMaxSize)
+                if (fileSize >= fileMaxSize)
                 {
                     fileNumber++;
                     continue;
@@ -106,17 +141,17 @@ namespace Patronage2020.Controllers
                     var totalLength = content.Length + fileSize;
 
                     // If it's too large, we take as many characters as we can and put the rest in the next file
-                    if (totalLength > FileMaxSize)
+                    if (totalLength > fileMaxSize)
                     {
                         // Measure how many characters will fit in
-                        var length = totalLength % FileMaxSize;
+                        var length = totalLength % fileMaxSize;
                         length = content.Length - length;
 
                         // Get the part that still fits in
                         var firstPart = content.Substring(0, length);
 
                         // Put it in the first file
-                        using (var f = new StreamWriter(_filePath + fileNumber, true))
+                        using (var f = new StreamWriter(filePath + fileNumber, true))
                         {
                             f.Write(firstPart);
                         }
@@ -127,7 +162,7 @@ namespace Patronage2020.Controllers
                         content = content.Substring(length);
                     }
 
-                    using (var outputFile = new StreamWriter(_filePath + fileNumber, true))
+                    using (var outputFile = new StreamWriter(filePath + fileNumber, true))
                     {
                         outputFile.Write(content);
                     }
@@ -139,9 +174,15 @@ namespace Patronage2020.Controllers
             return true;
         }
 
-        private static void ValidateContent(string content)
+        /// <summary>
+        /// Validates data if it's valid to save in the files
+        /// </summary>
+        /// <param name="content">Data to validate</param>
+        /// <exception cref="System.Web.Http.HttpResponseException">Thrown when data is invalid</exception>
+        private void ValidateContent(string content)
         {
-            if (content.Length > LineMaxLength)
+            var lineMaxLength = config.Value.LineMaxLength;
+            if (content.Length > lineMaxLength)
             {
                 throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
             }

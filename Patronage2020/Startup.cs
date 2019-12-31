@@ -16,12 +16,15 @@ namespace Patronage2020
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public IConfigurationRoot Configuration { get; set; }
+        public Startup(IWebHostEnvironment env)
         {
-            Configuration = configuration;
-        }
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-        public IConfiguration Configuration { get; }
+            Configuration = builder.Build();
+        }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -33,6 +36,8 @@ namespace Patronage2020
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
             });
+
+            services.Configure<FileConfig>(Configuration.GetSection("FileConfig"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
