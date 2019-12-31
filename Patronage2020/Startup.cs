@@ -38,6 +38,8 @@ namespace Patronage2020
             });
 
             services.Configure<FileConfig>(Configuration.GetSection("FileConfig"));
+
+            services.AddTransient<IFileManagementService, FileManagementService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
