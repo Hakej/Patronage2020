@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using Patronage2020.Application.Common.Interfaces;
 using Patronage2020.Common;
+using Patronage2020.Domain.Entities;
 
 namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
 {
@@ -23,8 +24,7 @@ namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
             _context = context;
         }
 
-        // TODO: Simplify the logic
-        public Task<string> Handle(PutOneLineCommand request, CancellationToken cancellationToken)
+        public async Task<string> Handle(PutOneLineCommand request, CancellationToken cancellationToken)
         {
             // Get newest file
             var writingFile = _context.WritingFiles
@@ -51,7 +51,7 @@ namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
                     newFile.Write(request.NewLine);
                 }
 
-                return Task.FromResult(request.NewLine);
+                return await Task.FromResult(request.NewLine);
             }
 
             var totalLength = request.NewLine.Length + fileSize;
@@ -63,7 +63,7 @@ namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
                     outputFile.Write(request.NewLine);
                 }
 
-                return Task.FromResult(request.NewLine);
+                return await Task.FromResult(request.NewLine);
             }
 
             var excessLength = totalLength % fileMaxSize;
@@ -71,7 +71,8 @@ namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
             var firstPart = request.NewLine.Substring(0, excessLength);
             var secondPart = request.NewLine.Substring(excessLength);
             var secondId = writingFile.Id + 1;
-            var secondFilePath = Path.Combine(dirName, $"{secondId}.txt");
+            var secondFileName = $"{secondId}.txt";
+            var secondFilePath = Path.Combine(dirName, secondFileName);
 
             using(var firstFile = new StreamWriter(filePath, true))
             {
@@ -83,7 +84,10 @@ namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
                 secondFile.Write(secondPart);
             }
 
-            return Task.FromResult(request.NewLine);
+            _context.WritingFiles.Add(new WritingFile { Name = secondFileName, Content = secondPart });
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return await Task.FromResult(request.NewLine);
         }
     }
 }

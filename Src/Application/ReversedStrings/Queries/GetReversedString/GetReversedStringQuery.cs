@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using MediatR;
+using Patronage2020.Domain.Entities;
 
-namespace Patronage2020.Application.ReversedString.Queries.GetReversedString
+namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedString
 {
-    public class GetReversedStringQuery : IRequest<ReversedStringDto>
+    public class GetReversedStringQuery : IRequest<ReversedString>
     {
         public string StringToReverse { get; }
 

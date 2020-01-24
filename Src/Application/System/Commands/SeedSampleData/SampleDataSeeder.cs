@@ -38,7 +38,7 @@ namespace Patronage2020.Persistence
         {
             var writingFiles = new[]
             {
-                new WritingFile { Id = 1, Name = "1.txt" }
+                new WritingFile { Name = "1.txt" }
             };
 
             using(var stream = File.Create(Path.Combine("Data", "1.txt")))

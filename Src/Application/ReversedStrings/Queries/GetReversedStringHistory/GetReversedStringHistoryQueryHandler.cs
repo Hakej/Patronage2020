@@ -7,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Options;
+using Patronage2020.Domain.Entities;
 using Patronage2020.WebUI.Common;
 using Serilog;
 
 namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedStringHistory
 {
-    public class GetReversedStringHistoryQueryHandler : IRequestHandler<GetReversedStringHistoryQuery, ReversedStringHistoryDto>
+    public class GetReversedStringHistoryQueryHandler : IRequestHandler<GetReversedStringHistoryQuery, ReversedStringHistory>
     {
         private readonly IOptions<LoggingConfig> _config;
 
@@ -21,7 +22,7 @@ namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedStringHis
             _config = config;
         }
 
-        public Task<ReversedStringHistoryDto> Handle(GetReversedStringHistoryQuery request, CancellationToken cancellationToken)
+        public Task<ReversedStringHistory> Handle(GetReversedStringHistoryQuery request, CancellationToken cancellationToken)
         {
             var filePath = Path.Combine(_config.Value.DirectoryName, _config.Value.FileName);
             string[] history;
@@ -37,7 +38,7 @@ namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedStringHis
                 }
             }
 
-            return Task.FromResult(new ReversedStringHistoryDto { History = new List<string>(history) });
+            return Task.FromResult(new ReversedStringHistory { History = new List<string>(history) });
         }
     }
 }

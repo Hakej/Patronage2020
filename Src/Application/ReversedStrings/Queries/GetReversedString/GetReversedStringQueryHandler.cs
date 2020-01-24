@@ -5,13 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Patronage2020.Domain.Entities;
 using Serilog;
 
-namespace Patronage2020.Application.ReversedString.Queries.GetReversedString
+namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedString
 {
-    public class GetReversedStringQueryHandler : IRequestHandler<GetReversedStringQuery, ReversedStringDto>
+    public class GetReversedStringQueryHandler : IRequestHandler<GetReversedStringQuery, ReversedString>
     {
-        public Task<ReversedStringDto> Handle(GetReversedStringQuery request, CancellationToken cancellationToken)
+        public Task<ReversedString> Handle(GetReversedStringQuery request, CancellationToken cancellationToken)
         {
             var arrayToReverse = request.StringToReverse.ToCharArray();
             Array.Reverse(arrayToReverse);
@@ -19,7 +20,7 @@ namespace Patronage2020.Application.ReversedString.Queries.GetReversedString
 
             Log.Information(($"{request.StringToReverse} -> {reversedString}"));
 
-            return Task.FromResult(new ReversedStringDto { ReversedString = reversedString });
+            return Task.FromResult(new ReversedString { Content = reversedString });
         }
     }
 }

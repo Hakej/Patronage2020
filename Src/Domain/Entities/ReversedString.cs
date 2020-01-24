@@ -5,10 +5,8 @@ using Patronage2020.Domain.Common;
 
 namespace Patronage2020.Domain.Entities
 {
-    public class WritingFile : AuditableEntity
+    public class ReversedString : AuditableEntity
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
         public string Content { get; set; }
     }
 }

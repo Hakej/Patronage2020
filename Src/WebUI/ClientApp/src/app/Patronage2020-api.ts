@@ -16,7 +16,7 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
 export interface IReversedStringClient {
     getReversedStringHistory(): Observable<ReversedStringHistoryDto>;
-    getReversedString(stringToReverse: string | null): Observable<ReversedStringDto>;
+    getReversedString(stringToReverse: string | null): Observable<ReversedString>;
 }
 
 @Injectable()
@@ -78,7 +78,7 @@ export class ReversedStringClient implements IReversedStringClient {
         return _observableOf<ReversedStringHistoryDto>(<any>null);
     }
 
-    getReversedString(stringToReverse: string | null): Observable<ReversedStringDto> {
+    getReversedString(stringToReverse: string | null): Observable<ReversedString> {
         let url_ = this.baseUrl + "/api/ReversedString/stringToReverse?";
         if (stringToReverse === undefined)
             throw new Error("The parameter 'stringToReverse' must be defined.");
@@ -101,14 +101,14 @@ export class ReversedStringClient implements IReversedStringClient {
                 try {
                     return this.processGetReversedString(<any>response_);
                 } catch (e) {
-                    return <Observable<ReversedStringDto>><any>_observableThrow(e);
+                    return <Observable<ReversedString>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<ReversedStringDto>><any>_observableThrow(response_);
+                return <Observable<ReversedString>><any>_observableThrow(response_);
         }));
     }
 
-    protected processGetReversedString(response: HttpResponseBase): Observable<ReversedStringDto> {
+    protected processGetReversedString(response: HttpResponseBase): Observable<ReversedString> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -119,7 +119,7 @@ export class ReversedStringClient implements IReversedStringClient {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ReversedStringDto.fromJS(resultData200);
+            result200 = ReversedString.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -127,14 +127,14 @@ export class ReversedStringClient implements IReversedStringClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<ReversedStringDto>(<any>null);
+        return _observableOf<ReversedString>(<any>null);
     }
 }
 
 export interface IWritingFileClient {
     getWritingFile(id: number): Observable<WritingFileDto>;
     postWritingFile(content: string | null): Observable<WritingFileDto>;
-    putOneLine(newLine: string | null): Observable<WritingFileDto>;
+    putOneLine(newLine: string | null): Observable<string>;
 }
 
 @Injectable()
@@ -252,7 +252,7 @@ export class WritingFileClient implements IWritingFileClient {
         return _observableOf<WritingFileDto>(<any>null);
     }
 
-    putOneLine(newLine: string | null): Observable<WritingFileDto> {
+    putOneLine(newLine: string | null): Observable<string> {
         let url_ = this.baseUrl + "/api/WritingFile/line?";
         if (newLine === undefined)
             throw new Error("The parameter 'newLine' must be defined.");
@@ -275,14 +275,14 @@ export class WritingFileClient implements IWritingFileClient {
                 try {
                     return this.processPutOneLine(<any>response_);
                 } catch (e) {
-                    return <Observable<WritingFileDto>><any>_observableThrow(e);
+                    return <Observable<string>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<WritingFileDto>><any>_observableThrow(response_);
+                return <Observable<string>><any>_observableThrow(response_);
         }));
     }
 
-    protected processPutOneLine(response: HttpResponseBase): Observable<WritingFileDto> {
+    protected processPutOneLine(response: HttpResponseBase): Observable<string> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -293,7 +293,7 @@ export class WritingFileClient implements IWritingFileClient {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = WritingFileDto.fromJS(resultData200);
+            result200 = resultData200 !== undefined ? resultData200 : <any>null;
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -301,7 +301,7 @@ export class WritingFileClient implements IWritingFileClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<WritingFileDto>(<any>null);
+        return _observableOf<string>(<any>null);
     }
 }
 
@@ -349,10 +349,13 @@ export interface IReversedStringHistoryDto {
     history?: string[] | undefined;
 }
 
-export class ReversedStringDto implements IReversedStringDto {
-    reversedString?: string | undefined;
+export class AuditableEntity implements IAuditableEntity {
+    createdBy?: string | undefined;
+    created?: Date;
+    lastModifiedBy?: string | undefined;
+    lastModified?: Date | undefined;
 
-    constructor(data?: IReversedStringDto) {
+    constructor(data?: IAuditableEntity) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -363,30 +366,73 @@ export class ReversedStringDto implements IReversedStringDto {
 
     init(data?: any) {
         if (data) {
-            this.reversedString = data["reversedString"];
+            this.createdBy = data["createdBy"];
+            this.created = data["created"] ? new Date(data["created"].toString()) : <any>undefined;
+            this.lastModifiedBy = data["lastModifiedBy"];
+            this.lastModified = data["lastModified"] ? new Date(data["lastModified"].toString()) : <any>undefined;
         }
     }
 
-    static fromJS(data: any): ReversedStringDto {
+    static fromJS(data: any): AuditableEntity {
         data = typeof data === 'object' ? data : {};
-        let result = new ReversedStringDto();
+        let result = new AuditableEntity();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["reversedString"] = this.reversedString;
+        data["createdBy"] = this.createdBy;
+        data["created"] = this.created ? this.created.toISOString() : <any>undefined;
+        data["lastModifiedBy"] = this.lastModifiedBy;
+        data["lastModified"] = this.lastModified ? this.lastModified.toISOString() : <any>undefined;
         return data; 
     }
 }
 
-export interface IReversedStringDto {
-    reversedString?: string | undefined;
+export interface IAuditableEntity {
+    createdBy?: string | undefined;
+    created?: Date;
+    lastModifiedBy?: string | undefined;
+    lastModified?: Date | undefined;
+}
+
+export class ReversedString extends AuditableEntity implements IReversedString {
+    content?: string | undefined;
+
+    constructor(data?: IReversedString) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.content = data["content"];
+        }
+    }
+
+    static fromJS(data: any): ReversedString {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReversedString();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["content"] = this.content;
+        super.toJSON(data);
+        return data; 
+    }
+}
+
+export interface IReversedString extends IAuditableEntity {
+    content?: string | undefined;
 }
 
 export class WritingFileDto implements IWritingFileDto {
     id?: number;
+    name?: string | undefined;
     content?: string | undefined;
 
     constructor(data?: IWritingFileDto) {
@@ -401,6 +447,7 @@ export class WritingFileDto implements IWritingFileDto {
     init(data?: any) {
         if (data) {
             this.id = data["id"];
+            this.name = data["name"];
             this.content = data["content"];
         }
     }
@@ -415,6 +462,7 @@ export class WritingFileDto implements IWritingFileDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
+        data["name"] = this.name;
         data["content"] = this.content;
         return data; 
     }
@@ -422,6 +470,7 @@ export class WritingFileDto implements IWritingFileDto {
 
 export interface IWritingFileDto {
     id?: number;
+    name?: string | undefined;
     content?: string | undefined;
 }
 

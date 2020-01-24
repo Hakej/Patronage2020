@@ -50,7 +50,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReversedStringDto"
+                  "$ref": "#/components/schemas/ReversedString"
                 }
               }
             }
@@ -146,7 +146,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WritingFileDto"
+                  "type": "string"
                 }
               }
             }
@@ -170,12 +170,42 @@
           }
         }
       },
-      "ReversedStringDto": {
+      "ReversedString": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AuditableEntity"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "content": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "AuditableEntity": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "reversedString": {
+          "createdBy": {
             "type": "string",
+            "nullable": true
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModifiedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         }
@@ -187,6 +217,10 @@
           "id": {
             "type": "integer",
             "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
           },
           "content": {
             "type": "string",

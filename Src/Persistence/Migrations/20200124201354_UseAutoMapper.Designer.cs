@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Patronage2020.Persistence;
 
 namespace Patronage2020.Persistence.Migrations
 {
     [DbContext(typeof(Patronage2020DbContext))]
-    partial class Patronage2020DbContextModelSnapshot : ModelSnapshot
+    [Migration("20200124201354_UseAutoMapper")]
+    partial class UseAutoMapper
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

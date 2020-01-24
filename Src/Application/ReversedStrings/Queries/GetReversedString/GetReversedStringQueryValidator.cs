@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using FluentValidation;
 
-namespace Patronage2020.Application.ReversedString.Queries.GetReversedString
+namespace Patronage2020.Application.ReversedStrings.Queries.GetReversedString
 {
     public class GetReversedStringQueryValidator : AbstractValidator<GetReversedStringQuery>
     {

@@ -13,7 +13,7 @@ using Patronage2020.Domain.Entities;
 
 namespace Patronage2020.Application.WritingFiles.Commands.PostWritingFile
 {
-    public class PostWritingFileCommandHandler : IRequestHandler<PostWritingFileCommand, WritingFileDto>
+    public class PostWritingFileCommandHandler : IRequestHandler<PostWritingFileCommand, WritingFile>
     {
         private readonly IOptions<WritingFilesConfig> _config;
         private readonly IPatronage2020DbContext _context;
@@ -24,7 +24,7 @@ namespace Patronage2020.Application.WritingFiles.Commands.PostWritingFile
             _context = context;
         }
 
-        public Task<WritingFileDto> Handle(PostWritingFileCommand request, CancellationToken cancellationToken)
+        public async Task<WritingFile> Handle(PostWritingFileCommand request, CancellationToken cancellationToken)
         {
             var dirName = _config.Value.DirectoryName;
             var fileNumber = _config.Value.StartingNumber;
@@ -48,10 +48,12 @@ namespace Patronage2020.Application.WritingFiles.Commands.PostWritingFile
             }
 
             // Update database
+            var entity = new WritingFile { Name = $"{fileNumber}.txt", Content = request.Content };
             _context.WritingFiles.RemoveRange(_context.WritingFiles);
-            _context.WritingFiles.Add(new WritingFile { Id = fileNumber, Name = $"{fileNumber}.txt" });
+            _context.WritingFiles.Add(entity);
+            await _context.SaveChangesAsync(cancellationToken);
 
-            return Task.FromResult(new WritingFileDto { Id = fileNumber, Content = request.Content });
+            return await Task.FromResult(entity);
         }
     }
 }
