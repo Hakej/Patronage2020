@@ -10,11 +10,6 @@ namespace Patronage2020.Application.WritingFiles.Queries.GetWritingFile
     {
         public int Id { get; }
 
-        public GetWritingFileQuery()
-        {
-            Id = 0;
-        }
-
         public GetWritingFileQuery(int id)
         {
             Id = id;

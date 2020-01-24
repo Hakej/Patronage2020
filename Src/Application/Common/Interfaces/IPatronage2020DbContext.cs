@@ -7,6 +7,8 @@ namespace Patronage2020.Application.Common.Interfaces
 {
     public interface IPatronage2020DbContext
     {
+        DbSet<WritingFile> WritingFiles { get; set; }
+
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

@@ -14,7 +14,7 @@ namespace Patronage2020.WebUI.Controllers
     {
         [HttpGet("id")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<WritingFileDto>> GetWritingFile(int id = 0)
+        public async Task<ActionResult<WritingFileDto>> GetWritingFile(int id)
         {
             var query = new GetWritingFileQuery(id);
             var result = await Mediator.Send(query);

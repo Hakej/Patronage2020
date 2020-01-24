@@ -5,51 +5,40 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Options;
 using Patronage2020.Application.Common.Exceptions;
+using Patronage2020.Application.Common.Interfaces;
 using Patronage2020.Application.WritingFiles.Models;
+using Patronage2020.Common;
 
 namespace Patronage2020.Application.WritingFiles.Queries.GetWritingFile
 {
     public class GetWritingFileQueryHandler : IRequestHandler<GetWritingFileQuery, WritingFileDto>
     {
-        public Task<WritingFileDto> Handle(GetWritingFileQuery request, CancellationToken cancellationToken)
-        {            
-            // TODO: Move directory path to config
-            var fileDir = "Data";
+        private readonly IOptions<WritingFilesConfig> _config;
+        private readonly IPatronage2020DbContext _context;
+
+        public GetWritingFileQueryHandler(IOptions<WritingFilesConfig> config, IPatronage2020DbContext context)
+        {
+            _config = config;
+            _context = context;
+        }
+
+        public async Task<WritingFileDto> Handle(GetWritingFileQuery request, CancellationToken cancellationToken)
+        {
+            var entity = await _context.WritingFiles.FindAsync(request.Id);
+
+            if (entity == null)
+            {
+                throw new WritingFileNotFoundException(request.Id);
+            }
+
             var builder = new StringBuilder();
+            var dirName = _config.Value.DirectoryName;
+            var filePath = Path.Combine(dirName, entity.Name);
+            builder.Append(File.ReadAllText(filePath));
 
-            if(!Directory.Exists(fileDir))
-            {
-                Directory.CreateDirectory(fileDir);
-            }
-
-            // Read all files if id == 0
-            if(request.Id == 0)
-            {
-                var dirInfo = new DirectoryInfo(fileDir);
-
-                foreach(var fileInfo in dirInfo.GetFiles())
-                {
-                    using(var file = new StreamReader(fileInfo.FullName))
-                    {
-                        builder.Append(file.ReadToEnd());
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    var filePath = Path.Combine(fileDir, $"{request.Id}.txt");
-                    builder.Append(File.ReadAllText(filePath));
-                }
-                catch(Exception ex)
-                {
-                    throw new WritingFileNotFoundException(request.Id, ex);
-                }
-            }
-
-            return Task.FromResult(new WritingFileDto { Id = request.Id, Content = builder.ToString() });
+            return await Task.FromResult(new WritingFileDto { Id = request.Id, Content = builder.ToString() });
         }
     }
 }

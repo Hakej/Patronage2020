@@ -7,6 +7,7 @@ namespace Patronage2020.WebUI.Common
 {
     public class LoggingConfig
     {
-        public string FilePath { get; set; }
+        public string DirectoryName { get; set; }
+        public string FileName { get; set; }
     }
 }

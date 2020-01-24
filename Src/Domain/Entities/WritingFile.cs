@@ -8,6 +8,6 @@ namespace Patronage2020.Domain.Entities
     public class WritingFile : AuditableEntity
     {
         public int Id { get; set; }
-        public string Content { get; set; }
+        public string Name { get; set; }
     }
 }

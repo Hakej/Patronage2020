@@ -6,15 +6,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Http;
 using Patronage2020.Infrastructure;
 using Patronage2020.Persistence;
 using Patronage2020.Application;
 using Patronage2020.Application.Common.Interfaces;
 using Patronage2020.WebUI.Common;
 using Patronage2020.WebUI.Services;
-using Serilog.Extensions.Logging.File;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using System.IO;
+using Patronage2020.Common;
+using AutoMapper;
 
 namespace Patronage2020.WebUI
 {
@@ -69,7 +70,18 @@ namespace Patronage2020.WebUI
 
             services.AddOptions();
 
+            services.Configure<WritingFilesConfig>(Configuration.GetSection("WritingFiles"));
             services.Configure<LoggingConfig>(Configuration.GetSection("Logging"));
+
+            var dirName = Configuration.GetValue<string>("Logging:DirectoryName");
+            var fileName = Configuration.GetValue<string>("Logging:FileName");
+            var loggingPath = Path.Combine(dirName, fileName);
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(loggingPath, shared:true, outputTemplate: "{Timestamp:yyyy:MM:dd HH:mm:ss} {Message}{NewLine}")
+                .CreateLogger();
+
+            services.AddAutoMapper(typeof(Startup));
 
             _services = services;
         }

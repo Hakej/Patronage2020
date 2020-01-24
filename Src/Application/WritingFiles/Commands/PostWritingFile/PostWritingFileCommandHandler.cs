@@ -5,25 +5,38 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Options;
+using Patronage2020.Application.Common.Interfaces;
 using Patronage2020.Application.WritingFiles.Models;
+using Patronage2020.Common;
+using Patronage2020.Domain.Entities;
 
 namespace Patronage2020.Application.WritingFiles.Commands.PostWritingFile
 {
     public class PostWritingFileCommandHandler : IRequestHandler<PostWritingFileCommand, WritingFileDto>
     {
+        private readonly IOptions<WritingFilesConfig> _config;
+        private readonly IPatronage2020DbContext _context;
+
+        public PostWritingFileCommandHandler(IOptions<WritingFilesConfig> config, IPatronage2020DbContext context)
+        {
+            _config = config;
+            _context = context;
+        }
+
         public Task<WritingFileDto> Handle(PostWritingFileCommand request, CancellationToken cancellationToken)
         {
-            // TODO: Move directory path to config
-            var fileDir = "Data";
-            var filePath = Path.Combine(fileDir, "1.txt");
+            var dirName = _config.Value.DirectoryName;
+            var fileNumber = _config.Value.StartingNumber;
+            var filePath = Path.Combine(dirName, $"{fileNumber}.txt");
 
-            if(!Directory.Exists(fileDir))
+            if(!Directory.Exists(dirName))
             {
-                Directory.CreateDirectory(fileDir);
+                Directory.CreateDirectory(dirName);
             }
 
             // Delete all existing data
-            var dirInfo = new DirectoryInfo(fileDir);
+            var dirInfo = new DirectoryInfo(dirName);
             foreach(var file in dirInfo.GetFiles())
             {
                 file.Delete();
@@ -34,7 +47,11 @@ namespace Patronage2020.Application.WritingFiles.Commands.PostWritingFile
                 file.Write(request.Content);
             }
 
-            return Task.FromResult(new WritingFileDto { Id = 1, Content = request.Content });
+            // Update database
+            _context.WritingFiles.RemoveRange(_context.WritingFiles);
+            _context.WritingFiles.Add(new WritingFile { Id = fileNumber, Name = $"{fileNumber}.txt" });
+
+            return Task.FromResult(new WritingFileDto { Id = fileNumber, Content = request.Content });
         }
     }
 }

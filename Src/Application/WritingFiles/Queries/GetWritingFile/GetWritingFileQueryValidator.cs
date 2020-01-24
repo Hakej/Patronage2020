@@ -9,7 +9,7 @@ namespace Patronage2020.Application.WritingFiles.Queries.GetWritingFile
     {
         public GetWritingFileQueryValidator()
         {
-            RuleFor(x => x.Id).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.Id).GreaterThan(0);
         }
     }
 }

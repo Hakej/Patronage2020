@@ -17,7 +17,7 @@ namespace Patronage2020.Application.ReversedString.Queries.GetReversedString
             Array.Reverse(arrayToReverse);
             var reversedString = new string(arrayToReverse);
 
-            Log.Information(($"{DateTime.Now} {request.StringToReverse} -> {reversedString}"));
+            Log.Information(($"{request.StringToReverse} -> {reversedString}"));
 
             return Task.FromResult(new ReversedStringDto { ReversedString = reversedString });
         }

@@ -15,6 +15,7 @@ using Patronage2020.Application.Common.Interfaces;
 using Patronage2020.Application.System.Commands.SeedSampleData;
 using Patronage2020.Infrastructure.Identity;
 using Serilog;
+using System.IO;
 
 namespace Patronage2020.WebUI
 {
@@ -54,16 +55,6 @@ namespace Patronage2020.WebUI
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     var env = hostingContext.HostingEnvironment;
-
-                    var builtConfig = new ConfigurationBuilder()
-                        .AddJsonFile("appsettings.json")
-                        .AddCommandLine(args)
-                        .Build();
-
-                    Log.Logger = new LoggerConfiguration()
-                        .WriteTo.Console()
-                        .WriteTo.File(builtConfig["Logging:FilePath"])
-                        .CreateLogger();
 
                     config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                         .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);

@@ -131,12 +131,14 @@ export class ReversedStringClient implements IReversedStringClient {
     }
 }
 
-export interface IWritingClient {
-    getWritingFile(id: number | undefined): Observable<WritingFileDto>;
+export interface IWritingFileClient {
+    getWritingFile(id: number): Observable<WritingFileDto>;
+    postWritingFile(content: string | null): Observable<WritingFileDto>;
+    putOneLine(newLine: string | null): Observable<WritingFileDto>;
 }
 
 @Injectable()
-export class WritingClient implements IWritingClient {
+export class WritingFileClient implements IWritingFileClient {
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -146,11 +148,11 @@ export class WritingClient implements IWritingClient {
         this.baseUrl = baseUrl ? baseUrl : "";
     }
 
-    getWritingFile(id: number | undefined): Observable<WritingFileDto> {
-        let url_ = this.baseUrl + "/api/Writing/id?";
-        if (id === null)
-            throw new Error("The parameter 'id' cannot be null.");
-        else if (id !== undefined)
+    getWritingFile(id: number): Observable<WritingFileDto> {
+        let url_ = this.baseUrl + "/api/WritingFile/id?";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined and cannot be null.");
+        else
             url_ += "id=" + encodeURIComponent("" + id) + "&"; 
         url_ = url_.replace(/[?&]$/, "");
 
@@ -177,6 +179,110 @@ export class WritingClient implements IWritingClient {
     }
 
     protected processGetWritingFile(response: HttpResponseBase): Observable<WritingFileDto> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = WritingFileDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<WritingFileDto>(<any>null);
+    }
+
+    postWritingFile(content: string | null): Observable<WritingFileDto> {
+        let url_ = this.baseUrl + "/api/WritingFile/content?";
+        if (content === undefined)
+            throw new Error("The parameter 'content' must be defined.");
+        else
+            url_ += "content=" + encodeURIComponent("" + content) + "&"; 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPostWritingFile(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processPostWritingFile(<any>response_);
+                } catch (e) {
+                    return <Observable<WritingFileDto>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<WritingFileDto>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processPostWritingFile(response: HttpResponseBase): Observable<WritingFileDto> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = WritingFileDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<WritingFileDto>(<any>null);
+    }
+
+    putOneLine(newLine: string | null): Observable<WritingFileDto> {
+        let url_ = this.baseUrl + "/api/WritingFile/line?";
+        if (newLine === undefined)
+            throw new Error("The parameter 'newLine' must be defined.");
+        else
+            url_ += "newLine=" + encodeURIComponent("" + newLine) + "&"; 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPutOneLine(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processPutOneLine(<any>response_);
+                } catch (e) {
+                    return <Observable<WritingFileDto>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<WritingFileDto>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processPutOneLine(response: HttpResponseBase): Observable<WritingFileDto> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 

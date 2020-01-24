@@ -1,87 +1,86 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Options;
+using Patronage2020.Application.Common.Interfaces;
+using Patronage2020.Common;
 
 namespace Patronage2020.Application.WritingFiles.Commands.PutOneLine
 {
     public class PutOneLineCommandHandler : IRequestHandler<PutOneLineCommand, string>
     {
+        private readonly IOptions<WritingFilesConfig> _config;
+        private readonly IPatronage2020DbContext _context;
+
+        public PutOneLineCommandHandler(IOptions<WritingFilesConfig> config, IPatronage2020DbContext context)
+        {
+            _config = config;
+            _context = context;
+        }
+
         // TODO: Simplify the logic
         public Task<string> Handle(PutOneLineCommand request, CancellationToken cancellationToken)
         {
-            // TODO: Move directory path to config
-            var fileDir = "Data";
+            // Get newest file
+            var writingFile = _context.WritingFiles
+                .OrderByDescending(p => p.Id)
+                .FirstOrDefault();
 
-            if(!Directory.Exists(fileDir))
+            var dirName = _config.Value.DirectoryName;
+            var fileMaxSize = _config.Value.MaxFileSizeInBytes;
+            var filePath = Path.Combine(dirName, writingFile.Name);
+            var fileInfo = new FileInfo(filePath);
+            var fileSize = (int)fileInfo.Length;
+
+            if(!Directory.Exists(dirName))
             {
-                Directory.CreateDirectory(fileDir);
+                Directory.CreateDirectory(dirName);
             }
 
-            var fileNumber = 1;
-            var lineWasInserted = false;
-
-            while(!lineWasInserted)
+            if(fileSize == fileMaxSize)
             {
-                var filePath = Path.Combine(fileDir, $"{fileNumber}.txt");
-
-                if(!File.Exists(filePath + fileNumber))
+                var newId = writingFile.Id + 1;
+                filePath = Path.Combine(dirName, $"{newId}.txt");
+                using(var newFile = new StreamWriter(filePath))
                 {
-                    using(var file = new StreamWriter(filePath + fileNumber, true))
-                    {
-                        file.Write(request.NewLine);
-                    }
-
-                    lineWasInserted = true;
-                    break;
+                    newFile.Write(request.NewLine);
                 }
 
-                var fileInfo = new FileInfo(filePath);
-                var fileSize = (int)fileInfo.Length;
-                var fileMaxSize = 256;
+                return Task.FromResult(request.NewLine);
+            }
 
-                if(fileSize >= fileMaxSize)
+            var totalLength = request.NewLine.Length + fileSize;
+
+            if(totalLength <= fileMaxSize)
+            {
+                using(var outputFile = new StreamWriter(filePath, true))
                 {
-                    fileNumber++;
-                    continue;
+                    outputFile.Write(request.NewLine);
                 }
-                else
-                {
-                    var newLine = request.NewLine;
-                    var totalLength = request.NewLine.Length + fileSize;
 
-                    // If it's too large, we take as many characters as we can and put the rest in the next file
-                    if(totalLength > fileMaxSize)
-                    {
-                        // Measure how many characters will fit in
-                        var length = totalLength % fileMaxSize;
-                        length = request.NewLine.Length - length;
+                return Task.FromResult(request.NewLine);
+            }
 
-                        // Get the part that still fits in
-                        var firstPart = request.NewLine.Substring(0, length);
+            var excessLength = totalLength % fileMaxSize;
+            excessLength = request.NewLine.Length - excessLength;
+            var firstPart = request.NewLine.Substring(0, excessLength);
+            var secondPart = request.NewLine.Substring(excessLength);
+            var secondId = writingFile.Id + 1;
+            var secondFilePath = Path.Combine(dirName, $"{secondId}.txt");
 
-                        // Put it in the first file
-                        using(var f = new StreamWriter(filePath + fileNumber, true))
-                        {
-                            f.Write(firstPart);
-                        }
+            using(var firstFile = new StreamWriter(filePath, true))
+            {
+                firstFile.Write(firstPart);
+            }            
 
-                        fileNumber++;
-
-                        // Save the characters we haven't put in yet
-                        newLine = request.NewLine.Substring(length);
-                    }
-
-                    using(var outputFile = new StreamWriter(filePath + fileNumber, true))
-                    {
-                        outputFile.Write(newLine);
-                    }
-
-                    lineWasInserted = true;
-                }
+            using(var secondFile = new StreamWriter(secondFilePath))
+            {
+                secondFile.Write(secondPart);
             }
 
             return Task.FromResult(request.NewLine);

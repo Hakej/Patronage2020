@@ -58,20 +58,84 @@
         }
       }
     },
-    "/api/Writing/id": {
+    "/api/WritingFile/id": {
       "get": {
         "tags": [
-          "Writing"
+          "WritingFile"
         ],
-        "operationId": "Writing_GetWritingFile",
+        "operationId": "WritingFile_GetWritingFile",
         "parameters": [
           {
             "name": "id",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "integer",
-              "format": "int32",
-              "default": 0
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WritingFileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/WritingFile/content": {
+      "post": {
+        "tags": [
+          "WritingFile"
+        ],
+        "operationId": "WritingFile_PostWritingFile",
+        "parameters": [
+          {
+            "name": "content",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WritingFileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/WritingFile/line": {
+      "put": {
+        "tags": [
+          "WritingFile"
+        ],
+        "operationId": "WritingFile_PutOneLine",
+        "parameters": [
+          {
+            "name": "newLine",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
             },
             "x-position": 1
           }
