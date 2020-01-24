@@ -1,0 +1,9 @@
+﻿namespace Patronage2020.Application.Common.Interfaces
+{
+    public interface ICurrentUserService
+    {
+        string UserId { get; }
+
+        bool IsAuthenticated { get; }
+    }
+}
